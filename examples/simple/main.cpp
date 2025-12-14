@@ -64,7 +64,12 @@ extern "C" __declspec(dllexport) LPXLOPER12 WINAPI MyHello() {
 extern "C" __declspec(dllexport) void WINAPI xlAutoOpen() {
     // 1. Self-Register the COM Server (Hybrid feature)
     // This ensures the RTD server is registered for the current user when the XLL is opened.
-    DllRegisterServer();
+    HRESULT hr = DllRegisterServer();
+    if (FAILED(hr)) {
+        OutputDebugStringW(L"MyHybridServer: DllRegisterServer failed in xlAutoOpen\n");
+    } else {
+        OutputDebugStringW(L"MyHybridServer: DllRegisterServer succeeded in xlAutoOpen\n");
+    }
 
     // 2. Register XLL functions
     static XLOPER12 xDLL, xFunc, xType, xName;
@@ -97,4 +102,5 @@ extern "C" __declspec(dllexport) void WINAPI xlAutoOpen() {
 
 extern "C" __declspec(dllexport) void WINAPI xlAutoClose() {
     // Cleanup if needed
+    OutputDebugStringW(L"MyHybridServer: xlAutoClose called\n");
 }
