@@ -90,8 +90,8 @@ public:
         }
 
         VariantInit(pvarOut);
-        pvarOut->vt = VT_BSTR;
-        pvarOut->bstrVal = SysAllocString(L"Getting Data...");
+        pvarOut->vt = VT_ERROR;
+        pvarOut->scode = 2043; // xlErrGettingData
         return S_OK;
     }
 
