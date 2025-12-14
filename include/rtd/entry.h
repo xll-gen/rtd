@@ -32,7 +32,7 @@
         } \
         \
         HRESULT __stdcall DllUnregisterServer() { \
-            return rtd::UnregisterServer(); \
+            return rtd::UnregisterServer(Clsid, ProgID); \
         } \
     }
 
