@@ -44,6 +44,23 @@ int main() {
         long countAfterCreate = rtd::GlobalModule::GetLockCount();
         Assert(countAfterCreate == initialCount + 1, "Global Lock Count should increment after Server creation");
 
+        // Test 0: QueryInterface Validation
+        {
+            void* ppv = nullptr;
+            HRESULT hr = server.QueryInterface(rtd::IID_IRtdServer, &ppv);
+            Assert(hr == S_OK, "QueryInterface(IID_IRtdServer) should return S_OK");
+            Assert(ppv != nullptr, "ppv should not be null");
+            if (ppv) static_cast<IUnknown*>(ppv)->Release();
+
+            hr = server.QueryInterface(IID_IDispatch, &ppv);
+            Assert(hr == S_OK, "QueryInterface(IID_IDispatch) should return S_OK");
+            if (ppv) static_cast<IUnknown*>(ppv)->Release();
+
+            GUID IID_Random = { 0x12345678, 0x1234, 0x1234, { 0x12, 0x34, 0x12, 0x34, 0x12, 0x34, 0x12, 0x34 } };
+            hr = server.QueryInterface(IID_Random, &ppv);
+            Assert(hr == E_NOINTERFACE, "QueryInterface(IID_Random) should return E_NOINTERFACE");
+        }
+
         // Test 1: ConnectData
         long topicID = 1;
         bool getNewValues = false;
