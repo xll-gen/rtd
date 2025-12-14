@@ -34,6 +34,7 @@ typedef struct xloper12 {
 
 #define xlfRegister   149
 #define xlfGetName    41
+#define xlFree        (0x4000 | 13)
 
 // Callback signature
 typedef int (__stdcall *PEXCEL12)(int xlfn, int count, LPXLOPER12 operRes, LPXLOPER12 opers[]);
