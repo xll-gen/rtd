@@ -91,7 +91,8 @@ extern "C" __declspec(dllexport) void WINAPI xlAutoOpen() {
     delete[] xType.val.str;
     delete[] xName.val.str;
 
-    // Note: xDLL might need freeing via xlFree, but we skip for simplicity/lack of xlFree mapping
+    // Free the DLL name returned by xlfGetName
+    Excel12(xlFree, 0, 1, &xDLL);
 }
 
 extern "C" __declspec(dllexport) void WINAPI xlAutoClose() {
