@@ -8,6 +8,18 @@
 namespace rtd {
 
     /**
+     * @brief Helper to delete registry keys in HKCU (Current User).
+     */
+    inline long DeleteKeyUser(const wchar_t* szKey) {
+        wchar_t szFullKey[1024];
+        wsprintfW(szFullKey, L"Software\\Classes\\%s", szKey);
+
+        // RegDeleteTreeW is available since Vista, which is safe to assume.
+        // It recursively deletes the key and all subkeys.
+        return RegDeleteTreeW(HKEY_CURRENT_USER, szFullKey);
+    }
+
+    /**
      * @brief Helper to set registry keys in HKCU (Current User).
      * This avoids the need for Administrator privileges.
      */
@@ -59,9 +71,6 @@ namespace rtd {
         // ThreadingModel = Apartment is crucial for Excel RTD
         wchar_t szInprocKey[256];
         wsprintfW(szInprocKey, L"%s\\InprocServer32", szCLSIDKey);
-        // Note: SetKeyAndValueUser constructs key relative to Software\Classes.
-        // To set a value on the Subkey we just created, we need to be careful.
-        // My SetKeyAndValueUser helper is simple. Let's make a direct call for the value.
 
         // Re-open InprocServer32 key to set ThreadingModel
         HKEY hKey;
@@ -78,11 +87,24 @@ namespace rtd {
 
     /**
      * @brief Unregister the server (Clean up).
-     * Note: A full implementation would delete the keys.
-     * For now we return S_OK as per the minimal example.
      */
-    inline HRESULT UnregisterServer() {
-        // TODO: Implement recursive key deletion if needed.
+    inline HRESULT UnregisterServer(const GUID& clsid, const wchar_t* progID) {
+        LPOLESTR pszCLSID;
+        StringFromCLSID(clsid, &pszCLSID);
+
+        wchar_t szCLSIDString[64];
+        wcscpy(szCLSIDString, pszCLSID);
+        CoTaskMemFree(pszCLSID);
+
+        wchar_t szCLSIDKey[128];
+        wsprintfW(szCLSIDKey, L"CLSID\\%s", szCLSIDString);
+
+        // 1. Delete ProgID
+        DeleteKeyUser(progID);
+
+        // 2. Delete CLSID
+        DeleteKeyUser(szCLSIDKey);
+
         return S_OK;
     }
 
