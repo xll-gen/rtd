@@ -78,7 +78,6 @@ int main() {
 
     {
         MyRtdServer server;
-        // Start Server to enable Worker thread
         MockUpdateEvent* pMockCallback = new MockUpdateEvent();
         long res = 0;
         server.ServerStart(pMockCallback, &res);
@@ -92,21 +91,19 @@ int main() {
              server.ConnectData(id, nullptr, &getNewValues, &result);
         }
 
-        // Wait for Worker (2 seconds delay in code -> wait 2.5s)
         std::cout << "Waiting for topics to become ready..." << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(2500));
 
-        long topicCount = 0;
+        long topicCount = -1;
         SAFEARRAY* outputArray = nullptr;
         HRESULT hr = server.RefreshData(&topicCount, &outputArray);
         Assert(hr == S_OK, "RefreshData should return S_OK with multiple topics");
         Assert(topicCount == 3, "TopicCount should be 3");
 
-        // Verify Array Dimensions
         if (outputArray) {
-            // long ubound1, ubound2;
-            // SafeArrayGetUBound(outputArray, 1, &ubound1);
-            // SafeArrayGetUBound(outputArray, 2, &ubound2);
+            long ubound1, ubound2;
+            SafeArrayGetUBound(outputArray, 1, &ubound1);
+            SafeArrayGetUBound(outputArray, 2, &ubound2);
             SafeArrayDestroy(outputArray);
         }
 
