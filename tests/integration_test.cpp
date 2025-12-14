@@ -25,7 +25,8 @@ int main() {
     }
 
     rtd::IRtdServer* pServer = nullptr;
-    hr = CoCreateInstance(CLSID_MyRtdServer, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pServer));
+    static const GUID IID_IRtdServer = { 0xEC0E6191, 0xDB51, 0x11D3, { 0x8F, 0x3E, 0x00, 0xC0, 0x4F, 0x36, 0x51, 0xB8 } };
+    hr = CoCreateInstance(CLSID_MyRtdServer, NULL, CLSCTX_INPROC_SERVER, IID_IRtdServer, (void**)&pServer);
 
     if (FAILED(hr)) {
         std::cerr << "CoCreateInstance failed. HRESULT: " << std::hex << hr << std::endl;
@@ -38,7 +39,8 @@ int main() {
 
     // Basic Interface Test
     // Call ServerStart
-    hr = pServer->ServerStart(nullptr); // Callback can be null for this test
+    long res = 0;
+    hr = pServer->ServerStart(nullptr, &res); // Callback can be null for this test
     Assert(hr == S_OK || hr == 0, "ServerStart returned success");
 
     // Clean up

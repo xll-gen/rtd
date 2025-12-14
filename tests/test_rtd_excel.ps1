@@ -31,10 +31,11 @@ try {
     $value = $cell.Value()
     Write-Host "Cell Value: $value"
 
-    if ($value -eq "Connecting...") {
-        Write-Host "SUCCESS: RTD returned expected value." -ForegroundColor Green
+    # Expect Error 2043 (xlErrGettingData)
+    if ($value -eq 2043) {
+        Write-Host "SUCCESS: RTD returned expected value (2043)." -ForegroundColor Green
     } else {
-        Write-Error "FAILURE: Unexpected value returned."
+        Write-Error "FAILURE: Unexpected value returned. Expected 2043, got $value"
     }
 
 } catch {

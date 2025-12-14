@@ -64,7 +64,7 @@ public:
         ServerTerminate();
     }
 
-    HRESULT __stdcall ServerStart(IRTDUpdateEvent* Callback, long* pfRes) override {
+    HRESULT __stdcall ServerStart(rtd::IRTDUpdateEvent* Callback, long* pfRes) override {
         HRESULT hr = RtdServerBase::ServerStart(Callback, pfRes);
         if (FAILED(hr)) return hr;
 
@@ -106,12 +106,12 @@ public:
         }
 
         // Create 2D SafeArray: 2 Rows x N Columns
-        // Dimension 0 (Rightmost/Cols): Topic Count
-        // Dimension 1 (Leftmost/Rows): 2 (TopicID, Value)
+        // Dimension 0 (Leftmost/Rows): 2 (TopicID, Value)
+        // Dimension 1 (Rightmost/Cols): Topic Count
         SAFEARRAYBOUND bounds[2];
-        bounds[0].cElements = *TopicCount;
+        bounds[0].cElements = 2;
         bounds[0].lLbound = 0;
-        bounds[1].cElements = 2;
+        bounds[1].cElements = *TopicCount;
         bounds[1].lLbound = 0;
 
         *parrayOut = SafeArrayCreate(VT_VARIANT, 2, bounds);
