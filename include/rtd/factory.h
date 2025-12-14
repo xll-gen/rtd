@@ -3,6 +3,7 @@
 
 #include <windows.h>
 #include <ole2.h>
+#include "module.h"
 
 namespace rtd {
 
@@ -10,7 +11,13 @@ namespace rtd {
     class ClassFactory : public IClassFactory {
         long m_refCount;
     public:
-        ClassFactory() : m_refCount(1) {}
+        ClassFactory() : m_refCount(1) {
+            GlobalModule::Lock();
+        }
+
+        virtual ~ClassFactory() {
+            GlobalModule::Unlock();
+        }
 
         HRESULT __stdcall QueryInterface(REFIID riid, void** ppv) override {
             if (riid == IID_IUnknown || riid == IID_IClassFactory) {
@@ -35,7 +42,14 @@ namespace rtd {
             return p->QueryInterface(riid, ppv);
         }
 
-        HRESULT __stdcall LockServer(BOOL) override { return S_OK; }
+        HRESULT __stdcall LockServer(BOOL fLock) override {
+            if (fLock) {
+                GlobalModule::Lock();
+            } else {
+                GlobalModule::Unlock();
+            }
+            return S_OK;
+        }
     };
 
 } // namespace rtd
