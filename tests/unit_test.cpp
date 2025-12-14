@@ -44,16 +44,12 @@ int main() {
     HRESULT hr = server.ConnectData(topicID, nullptr, &getNewValues, &result);
 
     Assert(hr == S_OK, "ConnectData should return S_OK");
-    Assert(result.vt == VT_BSTR, "Result type should be BSTR");
+    Assert(result.vt == VT_ERROR, "Result type should be VT_ERROR");
 
-    // Check the returned string value.
-    // In a real test we would compare wcscmp(result.bstrVal, L"Connecting...")
-    // But we need to be careful about SysAllocString behavior if we are not linking oleaut32 properly.
-    // Assuming standard environment:
-    if (result.vt == VT_BSTR) {
-        bool match = (wcscmp(result.bstrVal, L"Connecting...") == 0);
-        Assert(match, "Result string should be 'Connecting...'");
-        SysFreeString(result.bstrVal);
+    // Check the returned error value.
+    if (result.vt == VT_ERROR) {
+        bool match = (result.scode == 2043);
+        Assert(match, "Result should be Error 2043 (xlErrGettingData)");
     }
 
     // Test 2: RefreshData
