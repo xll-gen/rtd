@@ -51,8 +51,8 @@ int main() {
     // But we need to be careful about SysAllocString behavior if we are not linking oleaut32 properly.
     // Assuming standard environment:
     if (result.vt == VT_BSTR) {
-        bool match = (wcscmp(result.bstrVal, L"Connecting...") == 0);
-        Assert(match, "Result string should be 'Connecting...'");
+        bool match = (wcscmp(result.bstrVal, L"Getting Data...") == 0);
+        Assert(match, "Result string should be 'Getting Data...'");
         SysFreeString(result.bstrVal);
     }
 
