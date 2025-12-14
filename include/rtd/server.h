@@ -29,29 +29,12 @@ namespace rtd {
         // --- IUnknown ---
         HRESULT __stdcall QueryInterface(REFIID riid, void** ppv) override {
             // Check for IUnknown, IDispatch, or our specific IRtdServer IID
-            // Since we don't link against the official typelib, we assume the IID passed is correct
-            // if it matches IDispatch or IUnknown.
-            // For rigorous checks, the user should provide the IID they registered.
-            // But usually, Excel queries for IDispatch or the specific IID.
-
-            if (riid == IID_IUnknown || riid == IID_IDispatch) {
+            if (riid == IID_IUnknown || riid == IID_IDispatch || IsEqualGUID(riid, IID_IRtdServer)) {
                 *ppv = static_cast<IRtdServer*>(this);
             }
             else {
-                // We should technically check against the CLSID/IID of the RTD interface.
-                // However, without the UUID of IRtdServer hardcoded (it varies or is standard?),
-                // we rely on the fact that we inherit from it.
-                // Let's assume standard behavior:
-                // Standard IRtdServer IID: {EC0E6191-DB51-11D3-8F3E-00C04F3651B8}
-                static const GUID IID_IRtdServer =
-                    { 0xEC0E6191, 0xDB51, 0x11D3, { 0x8F, 0x3E, 0x00, 0xC0, 0x4F, 0x36, 0x51, 0xB8 } };
-
-                if (IsEqualGUID(riid, IID_IRtdServer)) {
-                    *ppv = static_cast<IRtdServer*>(this);
-                } else {
-                    *ppv = nullptr;
-                    return E_NOINTERFACE;
-                }
+                *ppv = nullptr;
+                return E_NOINTERFACE;
             }
             AddRef();
             return S_OK;

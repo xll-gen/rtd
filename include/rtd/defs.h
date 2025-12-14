@@ -26,9 +26,9 @@ namespace rtd {
         virtual HRESULT __stdcall ServerTerminate() = 0;
     };
 
-    // Helper to get IID for IRtdServer since __uuidof might not work in all MinGW setups or requires explicit decl.
-    // However, usually we use the IID passed to QueryInterface.
-    // We will define the IID for IRtdServer if needed, but often we just check against the user provided GUID or IDispatch.
+    // Standard IRtdServer IID: {EC0E6191-DB51-11D3-8F3E-00C04F3651B8}
+    static const GUID IID_IRtdServer =
+        { 0xEC0E6191, 0xDB51, 0x11D3, { 0x8F, 0x3E, 0x00, 0xC0, 0x4F, 0x36, 0x51, 0xB8 } };
 
 } // namespace rtd
 
