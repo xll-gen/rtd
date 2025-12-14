@@ -4,6 +4,7 @@
 #include <windows.h>
 #include "registry.h"
 #include "factory.h"
+#include "module.h"
 
 // Helper Macro to define standard DLL Exports
 // Usage: RTD_DEFINE_DLL_ENTRY(MyServerClass, CLSID_MyServer, L"My.ProgID", L"My Friendly Name")
@@ -25,7 +26,9 @@
             return CLASS_E_CLASSNOTAVAILABLE; \
         } \
         \
-        HRESULT __stdcall DllCanUnloadNow() { return S_OK; } \
+        HRESULT __stdcall DllCanUnloadNow() { \
+            return (rtd::GlobalModule::GetLockCount() == 0) ? S_OK : S_FALSE; \
+        } \
         \
         HRESULT __stdcall DllRegisterServer() { \
             return rtd::RegisterServer(g_hModule, Clsid, ProgID, FriendlyName); \

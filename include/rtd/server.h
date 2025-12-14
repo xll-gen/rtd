@@ -2,6 +2,7 @@
 #define RTD_SERVER_H
 
 #include "defs.h"
+#include "module.h"
 
 namespace rtd {
 
@@ -17,9 +18,12 @@ namespace rtd {
         IRTDUpdateEvent* m_callback;
 
     public:
-        RtdServerBase() : m_refCount(1), m_callback(nullptr) {}
+        RtdServerBase() : m_refCount(1), m_callback(nullptr) {
+            GlobalModule::Lock();
+        }
         virtual ~RtdServerBase() {
             if (m_callback) m_callback->Release();
+            GlobalModule::Unlock();
         }
 
         // --- IUnknown ---
