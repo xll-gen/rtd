@@ -29,6 +29,7 @@ namespace rtd {
         // --- IUnknown ---
         HRESULT __stdcall QueryInterface(REFIID riid, void** ppv) override {
             // Check for IUnknown, IDispatch, or our specific IRtdServer IID
+            // Note: IID_IRtdServer is defined in defs.h and matches {EC0E6191-DB51-11D3-8F3E-00C04F3651B8}
             if (riid == IID_IUnknown || riid == IID_IDispatch || IsEqualGUID(riid, IID_IRtdServer)) {
                 *ppv = static_cast<IRtdServer*>(this);
             }
