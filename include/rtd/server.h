@@ -1,6 +1,7 @@
 #ifndef RTD_SERVER_H
 #define RTD_SERVER_H
 
+#include <mutex>
 #include "defs.h"
 #include "module.h"
 
@@ -16,12 +17,14 @@ namespace rtd {
 
     protected:
         IRTDUpdateEvent* m_callback;
+        std::mutex m_mutex;
 
     public:
         RtdServerBase() : m_refCount(1), m_callback(nullptr) {
             GlobalModule::Lock();
         }
         virtual ~RtdServerBase() {
+            std::lock_guard<std::mutex> lock(m_mutex);
             if (m_callback) m_callback->Release();
             GlobalModule::Unlock();
         }
@@ -59,6 +62,7 @@ namespace rtd {
 
         // --- IRtdServer Default Implementations ---
         HRESULT __stdcall ServerStart(IRTDUpdateEvent* Callback, long* pfRes) override {
+            std::lock_guard<std::mutex> lock(m_mutex);
             m_callback = Callback;
             if (m_callback) m_callback->AddRef();
             *pfRes = 1;
@@ -66,10 +70,57 @@ namespace rtd {
         }
 
         HRESULT __stdcall ServerTerminate() override {
+            std::lock_guard<std::mutex> lock(m_mutex);
             if (m_callback) {
                 m_callback->Release();
                 m_callback = nullptr;
             }
+            return S_OK;
+        }
+
+        /**
+         * @brief Thread-safe helper to notify Excel of updates.
+         */
+        void NotifyUpdate() {
+            IRTDUpdateEvent* tempCallback = nullptr;
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                if (m_callback) {
+                    tempCallback = m_callback;
+                    tempCallback->AddRef();
+                }
+            }
+            if (tempCallback) {
+                tempCallback->UpdateNotify();
+                tempCallback->Release();
+            }
+        }
+
+        /**
+         * @brief Helper to create the standard 2D SafeArray for RefreshData.
+         * The array is [2][topicCount].
+         * Row 0: Topic IDs.
+         * Row 1: Values.
+         */
+        static HRESULT CreateRefreshDataArray(long topicCount, SAFEARRAY** ppArray) {
+            if (!ppArray) return E_POINTER;
+            if (topicCount < 0) return E_INVALIDARG;
+
+            if (topicCount == 0) {
+                 *ppArray = nullptr;
+                 return S_OK;
+            }
+
+            SAFEARRAYBOUND bounds[2];
+            // Dimension 0: Columns (Topics) - Right-most
+            bounds[0].cElements = topicCount;
+            bounds[0].lLbound = 0;
+            // Dimension 1: Rows (0=TopicID, 1=Value) - Left-most
+            bounds[1].cElements = 2;
+            bounds[1].lLbound = 0;
+
+            *ppArray = SafeArrayCreate(VT_VARIANT, 2, bounds);
+            if (!*ppArray) return E_OUTOFMEMORY;
             return S_OK;
         }
 

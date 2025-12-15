@@ -131,6 +131,26 @@ int main() {
         delete pMockCallback;
     }
 
+    // Test 4: Helper SafeArray Creation
+    std::cout << "Test 4: Helper SafeArray Creation..." << std::endl;
+    SAFEARRAY* helperArray = nullptr;
+    HRESULT hr = rtd::RtdServerBase::CreateRefreshDataArray(5, &helperArray);
+    Assert(hr == S_OK, "CreateRefreshDataArray should return S_OK");
+    Assert(helperArray != nullptr, "Helper array should not be null");
+
+    if (helperArray) {
+        long ubound1 = 0, ubound2 = 0;
+        // Dimension 1 (Left-most) -> Rows -> Should be 2 (0..1) -> UpperBound 1
+        SafeArrayGetUBound(helperArray, 1, &ubound1);
+        // Dimension 2 (Right-most) -> Cols -> Should be 5 (0..4) -> UpperBound 4
+        SafeArrayGetUBound(helperArray, 2, &ubound2);
+
+        Assert(ubound1 == 1, "Dimension 1 (Rows) UBound should be 1 (Size 2)");
+        Assert(ubound2 == 4, "Dimension 2 (Cols) UBound should be 4 (Size 5)");
+
+        SafeArrayDestroy(helperArray);
+    }
+
     std::cout << "All Unit Tests Passed." << std::endl;
     return 0;
 }
