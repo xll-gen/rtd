@@ -21,7 +21,9 @@
         HRESULT __stdcall DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv) { \
             if (IsEqualGUID(rclsid, Clsid)) { \
                 rtd::ClassFactory<ServerClass>* pFactory = new rtd::ClassFactory<ServerClass>(); \
-                return pFactory->QueryInterface(riid, ppv); \
+                HRESULT hr = pFactory->QueryInterface(riid, ppv); \
+                pFactory->Release(); \
+                return hr; \
             } \
             return CLASS_E_CLASSNOTAVAILABLE; \
         } \

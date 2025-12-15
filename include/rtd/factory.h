@@ -39,7 +39,9 @@ namespace rtd {
         HRESULT __stdcall CreateInstance(IUnknown* pUnkOuter, REFIID riid, void** ppv) override {
             if (pUnkOuter) return CLASS_E_NOAGGREGATION;
             ServerClass* p = new ServerClass();
-            return p->QueryInterface(riid, ppv);
+            HRESULT hr = p->QueryInterface(riid, ppv);
+            p->Release();
+            return hr;
         }
 
         HRESULT __stdcall LockServer(BOOL fLock) override {

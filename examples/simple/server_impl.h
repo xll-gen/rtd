@@ -106,12 +106,12 @@ public:
         }
 
         // Create 2D SafeArray: 2 Rows x N Columns
-        // Dimension 0 (Leftmost/Rows): 2 (TopicID, Value)
-        // Dimension 1 (Rightmost/Cols): Topic Count
+        // bounds[0] is the Right-Most dimension (Columns/Topics)
+        // bounds[1] is the Left-Most dimension (Rows)
         SAFEARRAYBOUND bounds[2];
-        bounds[0].cElements = 2;
+        bounds[0].cElements = *TopicCount;
         bounds[0].lLbound = 0;
-        bounds[1].cElements = *TopicCount;
+        bounds[1].cElements = 2;
         bounds[1].lLbound = 0;
 
         *parrayOut = SafeArrayCreate(VT_VARIANT, 2, bounds);

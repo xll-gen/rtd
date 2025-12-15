@@ -40,24 +40,24 @@ int main() {
     Assert(initialCount == 0, "Initial Global Lock Count should be 0");
 
     {
-        MyRtdServer server;
+        MyRtdServer* pServer = new MyRtdServer();
         long countAfterCreate = rtd::GlobalModule::GetLockCount();
         Assert(countAfterCreate == initialCount + 1, "Global Lock Count should increment after Server creation");
 
         // Test 0: QueryInterface Validation
         {
             void* ppv = nullptr;
-            HRESULT hr = server.QueryInterface(rtd::IID_IRtdServer, &ppv);
+            HRESULT hr = pServer->QueryInterface(rtd::IID_IRtdServer, &ppv);
             Assert(hr == S_OK, "QueryInterface(IID_IRtdServer) should return S_OK");
             Assert(ppv != nullptr, "ppv should not be null");
             if (ppv) static_cast<IUnknown*>(ppv)->Release();
 
-            hr = server.QueryInterface(IID_IDispatch, &ppv);
+            hr = pServer->QueryInterface(IID_IDispatch, &ppv);
             Assert(hr == S_OK, "QueryInterface(IID_IDispatch) should return S_OK");
             if (ppv) static_cast<IUnknown*>(ppv)->Release();
 
             GUID IID_Random = { 0x12345678, 0x1234, 0x1234, { 0x12, 0x34, 0x12, 0x34, 0x12, 0x34, 0x12, 0x34 } };
-            hr = server.QueryInterface(IID_Random, &ppv);
+            hr = pServer->QueryInterface(IID_Random, &ppv);
             Assert(hr == E_NOINTERFACE, "QueryInterface(IID_Random) should return E_NOINTERFACE");
         }
 
@@ -67,7 +67,7 @@ int main() {
         VARIANT result;
         VariantInit(&result);
 
-        HRESULT hr = server.ConnectData(topicID, nullptr, &getNewValues, &result);
+        HRESULT hr = pServer->ConnectData(topicID, nullptr, &getNewValues, &result);
 
         Assert(hr == S_OK, "ConnectData should return S_OK");
         Assert(result.vt == VT_ERROR, "Result type should be VT_ERROR");
@@ -81,10 +81,12 @@ int main() {
         long topicCount = -1;
         SAFEARRAY* outputArray = nullptr;
 
-        hr = server.RefreshData(&topicCount, &outputArray);
+        hr = pServer->RefreshData(&topicCount, &outputArray);
 
         Assert(hr == S_OK, "RefreshData should return S_OK");
         Assert(topicCount == 0, "TopicCount should be 0");
+
+        pServer->Release();
     }
 
     long finalCount = rtd::GlobalModule::GetLockCount();
@@ -94,10 +96,10 @@ int main() {
     std::cout << "Test 3: Multiple Topics (>2)..." << std::endl;
 
     {
-        MyRtdServer server;
+        MyRtdServer* pServer = new MyRtdServer();
         MockUpdateEvent* pMockCallback = new MockUpdateEvent();
         long res = 0;
-        server.ServerStart(pMockCallback, &res);
+        pServer->ServerStart(pMockCallback, &res);
 
         bool getNewValues = false;
         VARIANT result;
@@ -105,7 +107,7 @@ int main() {
 
         // Connect 3 topics
         for (long id = 10; id < 13; ++id) {
-             server.ConnectData(id, nullptr, &getNewValues, &result);
+             pServer->ConnectData(id, nullptr, &getNewValues, &result);
         }
 
         std::cout << "Waiting for topics to become ready..." << std::endl;
@@ -113,7 +115,7 @@ int main() {
 
         long topicCount = -1;
         SAFEARRAY* outputArray = nullptr;
-        HRESULT hr = server.RefreshData(&topicCount, &outputArray);
+        HRESULT hr = pServer->RefreshData(&topicCount, &outputArray);
         Assert(hr == S_OK, "RefreshData should return S_OK with multiple topics");
         Assert(topicCount == 3, "TopicCount should be 3");
 
@@ -124,7 +126,8 @@ int main() {
             SafeArrayDestroy(outputArray);
         }
 
-        server.ServerTerminate();
+        pServer->ServerTerminate();
+        pServer->Release();
         delete pMockCallback;
     }
 
