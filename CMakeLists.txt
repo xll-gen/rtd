@@ -42,3 +42,8 @@ add_test(NAME UnitTest COMMAND unit_test)
 add_executable(integration_test tests/integration_test.cpp)
 target_link_libraries(integration_test PRIVATE rtd ole32 oleaut32 uuid)
 add_test(NAME IntegrationTest COMMAND integration_test)
+
+if(MINGW)
+    target_link_options(unit_test PRIVATE -static -static-libgcc -static-libstdc++)
+    target_link_options(integration_test PRIVATE -static -static-libgcc -static-libstdc++)
+endif()

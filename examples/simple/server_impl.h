@@ -47,12 +47,8 @@ private:
                 }
             }
 
-            // Important: Call UpdateNotify outside the lock if possible,
-            // though standard COM usually marshals this.
-            // Check m_callback validity under lock? m_callback is protected by base class rules usually.
-            // RtdServerBase implementation: m_callback is set in ServerStart.
-            if (notify && m_callback) {
-                m_callback->UpdateNotify();
+            if (notify) {
+                NotifyUpdate();
             }
         }
     }
@@ -100,38 +96,24 @@ public:
 
         *TopicCount = static_cast<long>(m_readyTopics.size());
 
-        if (*TopicCount == 0) {
-            // Nothing to update
-            return S_OK;
-        }
+        HRESULT hr = CreateRefreshDataArray(*TopicCount, parrayOut);
+        if (FAILED(hr)) return hr;
 
-        // Create 2D SafeArray: 2 Rows x N Columns
-        // bounds[0] is the Right-Most dimension (Columns/Topics)
-        // bounds[1] is the Left-Most dimension (Rows)
-        SAFEARRAYBOUND bounds[2];
-        bounds[0].cElements = *TopicCount;
-        bounds[0].lLbound = 0;
-        bounds[1].cElements = 2;
-        bounds[1].lLbound = 0;
-
-        *parrayOut = SafeArrayCreate(VT_VARIANT, 2, bounds);
-        if (!*parrayOut) return E_OUTOFMEMORY;
+        if (*TopicCount == 0) return S_OK;
 
         long indices[2];
 
         for (long i = 0; i < *TopicCount; ++i) {
             long topicID = m_readyTopics[i];
 
-            // Row 0: TopicID
-            // indices[0] is Rightmost dimension (0..N-1)
-            // indices[1] is Leftmost dimension (0..1)
-            indices[0] = i; indices[1] = 0;
+            // Row 0: TopicID. indices[0]=Row(0), indices[1]=Col(i)
+            indices[0] = 0; indices[1] = i;
             VARIANT vID; VariantInit(&vID);
             vID.vt = VT_I4; vID.lVal = topicID;
             SafeArrayPutElement(*parrayOut, indices, &vID);
 
-            // Row 1: Value
-            indices[0] = i; indices[1] = 1;
+            // Row 1: Value. indices[0]=Row(1), indices[1]=Col(i)
+            indices[0] = 1; indices[1] = i;
             VARIANT vVal; VariantInit(&vVal);
             vVal.vt = VT_BSTR;
             vVal.bstrVal = SysAllocString(L"Hello World!");
