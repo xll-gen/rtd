@@ -79,7 +79,7 @@ public:
         return RtdServerBase::ServerTerminate();
     }
 
-    HRESULT __stdcall ConnectData(long TopicID, SAFEARRAY** Strings, bool* GetNewValues, VARIANT* pvarOut) override {
+    HRESULT __stdcall ConnectData(long TopicID, SAFEARRAY** Strings, VARIANT_BOOL* GetNewValues, VARIANT* pvarOut) override {
         {
             std::lock_guard<std::mutex> lock(m_mutex);
             m_pendingTopics[TopicID] = std::chrono::steady_clock::now();

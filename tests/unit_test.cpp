@@ -63,7 +63,7 @@ int main() {
 
         // Test 1: ConnectData
         long topicID = 1;
-        bool getNewValues = false;
+        VARIANT_BOOL getNewValues = VARIANT_FALSE;
         VARIANT result;
         VariantInit(&result);
 
@@ -101,7 +101,7 @@ int main() {
         long res = 0;
         pServer->ServerStart(pMockCallback, &res);
 
-        bool getNewValues = false;
+        VARIANT_BOOL getNewValues = VARIANT_FALSE;
         VARIANT result;
         VariantInit(&result);
 

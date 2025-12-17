@@ -134,6 +134,7 @@ namespace rtd {
         // User must implement:
         // ConnectData
         // RefreshData
+        virtual HRESULT __stdcall ConnectData(long TopicID, SAFEARRAY** Strings, VARIANT_BOOL* GetNewValues, VARIANT* pvarOut) override = 0;
     };
 
 } // namespace rtd
