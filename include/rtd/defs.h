@@ -19,7 +19,7 @@ namespace rtd {
     // IRtdServer Interface
     struct IRtdServer : public IDispatch {
         virtual HRESULT __stdcall ServerStart(IRTDUpdateEvent* Callback, long* pfRes) = 0;
-        virtual HRESULT __stdcall ConnectData(long TopicID, SAFEARRAY** Strings, bool* GetNewValues, VARIANT* pvarOut) = 0;
+        virtual HRESULT __stdcall ConnectData(long TopicID, SAFEARRAY** Strings, VARIANT_BOOL* GetNewValues, VARIANT* pvarOut) = 0;
         virtual HRESULT __stdcall RefreshData(long* TopicCount, SAFEARRAY** parrayOut) = 0;
         virtual HRESULT __stdcall DisconnectData(long TopicID) = 0;
         virtual HRESULT __stdcall Heartbeat(long* pfRes) = 0;
