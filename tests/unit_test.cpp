@@ -145,6 +145,7 @@ int main() {
         // Dimension 2 (Right-most) -> Cols -> Should be 5 (0..4) -> UpperBound 4
         SafeArrayGetUBound(helperArray, 2, &ubound2);
 
+        std::cout << "Debug: ubound1=" << ubound1 << ", ubound2=" << ubound2 << std::endl;
         Assert(ubound1 == 1, "Dimension 1 (Rows) UBound should be 1 (Size 2)");
         Assert(ubound2 == 4, "Dimension 2 (Cols) UBound should be 4 (Size 5)");
 

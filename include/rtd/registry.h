@@ -51,17 +51,14 @@ namespace rtd {
 
         LPOLESTR pszCLSID;
         StringFromCLSID(clsid, &pszCLSID);
-
-        wchar_t szCLSIDString[64];
-        wcscpy(szCLSIDString, pszCLSID);
+        std::wstring clsidStr(pszCLSID);
         CoTaskMemFree(pszCLSID);
 
-        std::wstring szCLSIDKey = L"CLSID\\";
-        szCLSIDKey += szCLSIDString;
+        std::wstring szCLSIDKey = L"CLSID\\" + clsidStr;
 
         // 1. ProgID -> CLSID
         if (FAILED(SetKeyAndValueUser(progID, nullptr, friendlyName))) return E_FAIL;
-        if (FAILED(SetKeyAndValueUser(progID, L"CLSID", szCLSIDString))) return E_FAIL;
+        if (FAILED(SetKeyAndValueUser(progID, L"CLSID", clsidStr.c_str()))) return E_FAIL;
 
         // 2. CLSID -> DLL Path
         if (FAILED(SetKeyAndValueUser(szCLSIDKey.c_str(), nullptr, friendlyName))) return E_FAIL;
@@ -91,13 +88,10 @@ namespace rtd {
     inline HRESULT UnregisterServer(const GUID& clsid, const wchar_t* progID) {
         LPOLESTR pszCLSID;
         StringFromCLSID(clsid, &pszCLSID);
-
-        wchar_t szCLSIDString[64];
-        wcscpy(szCLSIDString, pszCLSID);
+        std::wstring clsidStr(pszCLSID);
         CoTaskMemFree(pszCLSID);
 
-        std::wstring szCLSIDKey = L"CLSID\\";
-        szCLSIDKey += szCLSIDString;
+        std::wstring szCLSIDKey = L"CLSID\\" + clsidStr;
 
         // 1. Delete ProgID
         DeleteKeyUser(progID);

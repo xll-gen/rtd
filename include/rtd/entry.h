@@ -18,7 +18,9 @@
             return TRUE; \
         } \
         \
-        HRESULT __stdcall DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv) { \
+        __declspec(dllexport) HRESULT __stdcall DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv) { \
+            if (!ppv) return E_POINTER; \
+            *ppv = nullptr; \
             if (IsEqualGUID(rclsid, Clsid)) { \
                 rtd::ClassFactory<ServerClass>* pFactory = new rtd::ClassFactory<ServerClass>(); \
                 HRESULT hr = pFactory->QueryInterface(riid, ppv); \
@@ -28,15 +30,15 @@
             return CLASS_E_CLASSNOTAVAILABLE; \
         } \
         \
-        HRESULT __stdcall DllCanUnloadNow() { \
+        __declspec(dllexport) HRESULT __stdcall DllCanUnloadNow() { \
             return (rtd::GlobalModule::GetLockCount() == 0) ? S_OK : S_FALSE; \
         } \
         \
-        HRESULT __stdcall DllRegisterServer() { \
+        __declspec(dllexport) HRESULT __stdcall DllRegisterServer() { \
             return rtd::RegisterServer(g_hModule, Clsid, ProgID, FriendlyName); \
         } \
         \
-        HRESULT __stdcall DllUnregisterServer() { \
+        __declspec(dllexport) HRESULT __stdcall DllUnregisterServer() { \
             return rtd::UnregisterServer(Clsid, ProgID); \
         } \
     }
