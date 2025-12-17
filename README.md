@@ -23,9 +23,7 @@ This project implements "Raw COM" (no ATL/MFC) to allow a single binary (`.xll`)
 2.  Configure with CMake (using MinGW toolchain):
     *   **On Linux (Cross-compile):**
         ```bash
-        cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/mingw-w64-x86_64.cmake ..
-        # Or manually specify the compiler if no toolchain file exists:
-        cmake -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ ..
+        cmake -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres -DMINGW=ON ..
         ```
     *   **On Windows (MinGW):**
         ```bash
@@ -36,7 +34,7 @@ This project implements "Raw COM" (no ATL/MFC) to allow a single binary (`.xll`)
     ```bash
     cmake --build .
     ```
-    This will generate `MyHybridServer.xll` (and test executables).
+    This will generate `MyHybridServer.xll` (or `libMyHybridServer.xll` with MinGW defaults) and test executables.
 
 ## Registration
 
@@ -45,12 +43,16 @@ The generated `.xll` is a standard COM server. You must register it before Excel
 **To Register:**
 ```cmd
 regsvr32 MyHybridServer.xll
+:: Or if built with MinGW defaults:
+:: regsvr32 libMyHybridServer.xll
 ```
 *   This registers the server in `HKEY_CURRENT_USER` (HKCU), so **no Administrator privileges** are required.
 
 **To Unregister:**
 ```cmd
 regsvr32 /u MyHybridServer.xll
+:: Or:
+:: regsvr32 /u libMyHybridServer.xll
 ```
 
 ## Running Tests
@@ -59,7 +61,10 @@ regsvr32 /u MyHybridServer.xll
 The unit tests verify the internal logic of the C++ class without needing Excel.
 ```bash
 # Inside build directory
+# On Windows:
 ./unit_test.exe
+# On Linux (with Wine):
+wine unit_test.exe
 ```
 
 ### 2. Integration Tests (C++)
@@ -68,7 +73,10 @@ This test attempts to load the COM server via `CoCreateInstance`. This verifies 
 2.  Registration was successful.
 ```bash
 # Inside build directory (After running regsvr32)
+# On Windows:
 ./integration_test.exe
+# On Linux (with Wine):
+wine integration_test.exe
 ```
 
 ### 3. End-to-End Test (PowerShell + Excel)

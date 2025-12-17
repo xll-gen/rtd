@@ -27,7 +27,7 @@ It acts as both an Excel Add-in (XLL) and a COM RTD Server.
     ```
 4.  Build:
     ```bash
-    make
+    cmake --build .
     ```
 
 ## Testing
