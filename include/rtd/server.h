@@ -67,6 +67,7 @@ namespace rtd {
         // --- IRtdServer Default Implementations ---
         HRESULT __stdcall ServerStart(IRTDUpdateEvent* Callback, long* pfRes) override {
             std::lock_guard<std::mutex> lock(m_mutex);
+            if (m_callback) m_callback->Release();
             m_callback = Callback;
             if (m_callback) m_callback->AddRef();
             *pfRes = 1;
