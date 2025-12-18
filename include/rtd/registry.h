@@ -11,6 +11,8 @@ namespace rtd {
      * @brief Helper to delete registry keys in HKCU (Current User).
      */
     inline long DeleteKeyUser(const wchar_t* szKey) {
+        if (!szKey || !*szKey) return E_INVALIDARG;
+
         std::wstring szFullKey = L"Software\\Classes\\";
         szFullKey += szKey;
 
