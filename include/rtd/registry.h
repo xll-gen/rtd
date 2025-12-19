@@ -48,8 +48,15 @@ namespace rtd {
      * @brief Helper to register the COM server.
      */
     inline HRESULT RegisterServer(HMODULE hModule, const GUID& clsid, const wchar_t* progID, const wchar_t* friendlyName) {
-        wchar_t szModule[MAX_PATH];
-        GetModuleFileNameW(hModule, szModule, ARRAYSIZE(szModule));
+        std::vector<wchar_t> szModule(MAX_PATH);
+        DWORD len = GetModuleFileNameW(hModule, szModule.data(), static_cast<DWORD>(szModule.size()));
+
+        while (len == szModule.size() && szModule.size() < 32768) {
+            szModule.resize(szModule.size() * 2);
+            len = GetModuleFileNameW(hModule, szModule.data(), static_cast<DWORD>(szModule.size()));
+        }
+
+        if (len == 0 || len == szModule.size()) return E_FAIL;
 
         LPOLESTR pszCLSID;
         StringFromCLSID(clsid, &pszCLSID);
@@ -65,7 +72,7 @@ namespace rtd {
         // 2. CLSID -> DLL Path
         if (FAILED(SetKeyAndValueUser(szCLSIDKey.c_str(), nullptr, friendlyName))) return E_FAIL;
         if (FAILED(SetKeyAndValueUser(szCLSIDKey.c_str(), L"ProgID", progID))) return E_FAIL;
-        if (FAILED(SetKeyAndValueUser(szCLSIDKey.c_str(), L"InprocServer32", szModule))) return E_FAIL;
+        if (FAILED(SetKeyAndValueUser(szCLSIDKey.c_str(), L"InprocServer32", szModule.data()))) return E_FAIL;
 
         // ThreadingModel = Apartment is crucial for Excel RTD
         std::wstring szInprocKey = szCLSIDKey + L"\\InprocServer32";
