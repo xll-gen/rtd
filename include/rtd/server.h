@@ -66,6 +66,7 @@ namespace rtd {
 
         // --- IRtdServer Default Implementations ---
         HRESULT __stdcall ServerStart(IRTDUpdateEvent* Callback, long* pfRes) override {
+            if (!pfRes) return E_POINTER;
             std::lock_guard<std::mutex> lock(m_mutex);
             if (m_callback) m_callback->Release();
             m_callback = Callback;
@@ -130,7 +131,11 @@ namespace rtd {
         }
 
         HRESULT __stdcall DisconnectData(long TopicID) override { return S_OK; }
-        HRESULT __stdcall Heartbeat(long* pfRes) override { *pfRes = 1; return S_OK; }
+        HRESULT __stdcall Heartbeat(long* pfRes) override {
+            if (!pfRes) return E_POINTER;
+            *pfRes = 1;
+            return S_OK;
+        }
 
         // User must implement:
         // ConnectData
