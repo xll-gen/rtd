@@ -11,7 +11,7 @@ namespace rtd {
     // IRTDUpdateEvent Interface
     struct IRTDUpdateEvent : public IUnknown {
         virtual HRESULT __stdcall UpdateNotify() = 0;
-        virtual long __stdcall get_HeartbeatInterval() = 0;
+        virtual HRESULT __stdcall get_HeartbeatInterval(long* value) = 0;
         virtual HRESULT __stdcall put_HeartbeatInterval(long value) = 0;
         virtual HRESULT __stdcall Disconnect() = 0;
     };
