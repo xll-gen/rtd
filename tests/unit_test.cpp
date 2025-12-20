@@ -12,7 +12,11 @@
 struct MockUpdateEvent : public rtd::IRTDUpdateEvent {
     long m_refCount = 1;
     HRESULT __stdcall UpdateNotify() override { return S_OK; }
-    long __stdcall get_HeartbeatInterval() override { return 1000; }
+    HRESULT __stdcall get_HeartbeatInterval(long* value) override {
+        if (!value) return E_POINTER;
+        *value = 1000;
+        return S_OK;
+    }
     HRESULT __stdcall put_HeartbeatInterval(long value) override { return S_OK; }
     HRESULT __stdcall Disconnect() override { return S_OK; }
 
