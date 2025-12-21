@@ -118,12 +118,12 @@ namespace rtd {
             }
 
             SAFEARRAYBOUND bounds[2];
-            // Dimension 1: Rows (0=TopicID, 1=Value) - Left-most (rgsabound[0])
-            bounds[0].cElements = 2;
-            bounds[0].lLbound = 0;
-            // Dimension 2: Columns (Topics) - Right-most (rgsabound[1])
-            bounds[1].cElements = topicCount;
+            // Dimension 1: Rows (0=TopicID, 1=Value) - Left-most (rgsabound[1])
+            bounds[1].cElements = 2;
             bounds[1].lLbound = 0;
+            // Dimension 2: Columns (Topics) - Right-most (rgsabound[0])
+            bounds[0].cElements = topicCount;
+            bounds[0].lLbound = 0;
 
             *ppArray = SafeArrayCreate(VT_VARIANT, 2, bounds);
             if (!*ppArray) return E_OUTOFMEMORY;
