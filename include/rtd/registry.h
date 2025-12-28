@@ -26,6 +26,8 @@ namespace rtd {
      * This avoids the need for Administrator privileges.
      */
     inline long SetKeyAndValueUser(const wchar_t* szKey, const wchar_t* szSubkey, const wchar_t* szValue) {
+        if (!szKey || !*szKey) return E_INVALIDARG;
+
         HKEY hKey;
         std::wstring szFullKey = L"Software\\Classes\\";
         szFullKey += szKey;
@@ -34,7 +36,7 @@ namespace rtd {
             szFullKey += szSubkey;
         }
 
-        if (RegCreateKeyExW(HKEY_CURRENT_USER, szFullKey.c_str(), 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, nullptr, &hKey, nullptr) != ERROR_SUCCESS)
+        if (RegCreateKeyExW(HKEY_CURRENT_USER, szFullKey.c_str(), 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_SET_VALUE, nullptr, &hKey, nullptr) != ERROR_SUCCESS)
             return E_FAIL;
 
         if (szValue) {
