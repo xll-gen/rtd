@@ -85,7 +85,7 @@ namespace rtd {
         szFullKey += szInprocKey;
 
         if (RegOpenKeyExW(HKEY_CURRENT_USER, szFullKey.c_str(), 0, KEY_SET_VALUE, &hKey) == ERROR_SUCCESS) {
-            const wchar_t* threading = L"Apartment";
+            const wchar_t* threading = L"Both";
             RegSetValueExW(hKey, L"ThreadingModel", 0, REG_SZ, (const BYTE*)threading, (wcslen(threading) + 1) * sizeof(wchar_t));
             RegCloseKey(hKey);
         }

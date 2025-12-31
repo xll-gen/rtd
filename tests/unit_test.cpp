@@ -20,6 +20,12 @@ struct MockUpdateEvent : public rtd::IRTDUpdateEvent {
     HRESULT __stdcall put_HeartbeatInterval(long value) override { return S_OK; }
     HRESULT __stdcall Disconnect() override { return S_OK; }
 
+    // IDispatch stub
+    HRESULT __stdcall GetTypeInfoCount(UINT* pctinfo) override { return E_NOTIMPL; }
+    HRESULT __stdcall GetTypeInfo(UINT, LCID, ITypeInfo**) override { return E_NOTIMPL; }
+    HRESULT __stdcall GetIDsOfNames(REFIID, LPOLESTR*, UINT, LCID, DISPID*) override { return E_NOTIMPL; }
+    HRESULT __stdcall Invoke(DISPID, REFIID, LCID, WORD, DISPPARAMS*, VARIANT*, EXCEPINFO*, UINT*) override { return E_NOTIMPL; }
+
     // IUnknown
     HRESULT __stdcall QueryInterface(REFIID riid, void** ppv) override {
         *ppv = nullptr; return E_NOINTERFACE;

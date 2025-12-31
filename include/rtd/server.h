@@ -118,12 +118,25 @@ namespace rtd {
             }
 
             SAFEARRAYBOUND bounds[2];
-            // Dimension 1: Rows (0=TopicID, 1=Value) - Left-most (rgsabound[1])
-            bounds[1].cElements = 2;
-            bounds[1].lLbound = 0;
-            // Dimension 2: Columns (Topics) - Right-most (rgsabound[0])
-            bounds[0].cElements = topicCount;
+            // To achieve [2][TopicCount] (Rows=2, Cols=TopicCount):
+            // On this platform/compiler, bounds[0] maps to the Left-Most dimension (Dimension 1).
+            // bounds[1] maps to the Right-Most dimension (Dimension 2).
+            
+            // Dimension 1: Rows (0=TopicID, 1=Value) - Left-most
+            bounds[0].cElements = 2;
             bounds[0].lLbound = 0;
+            
+            // Dimension 2: Columns (Topics) - Right-most
+            bounds[1].cElements = topicCount;
+            bounds[1].lLbound = 0;
+
+            // Note on SafeArrayPutElement indices:
+            // indices[0] typically corresponds to the Right-Most dimension (bounds[1] here).
+            // indices[1] typically corresponds to the Left-Most dimension (bounds[0] here).
+            // So:
+            // indices[0] = topicIndex (Col)
+            // indices[1] = 0 (TopicID) or 1 (Value) (Row)
+            // This matches the user/Excel requirement.
 
             *ppArray = SafeArrayCreate(VT_VARIANT, 2, bounds);
             if (!*ppArray) return E_OUTOFMEMORY;
