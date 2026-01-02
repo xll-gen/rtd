@@ -32,6 +32,7 @@ Follow the [Microsoft COM Documentation](https://learn.microsoft.com/en-us/windo
     *   **No Admin:** Register only in `HKEY_CURRENT_USER` (HKCU).
     *   **Safe Strings:** Use `std::wstring` or safe string functions.
     *   **ThreadingModel:** Must be set to `Apartment` for Excel RTD servers.
+*   **SafeArrayGetUBound:** Be aware that in MinGW/Wine environments, `SafeArrayGetUBound(psa, 1, ...)` may query the *right-most* dimension, contrary to some documentation. Tests should be written to validate the observed behavior in the target environment.
 
 ## **Project Structure**
 

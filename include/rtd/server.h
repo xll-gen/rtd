@@ -4,6 +4,7 @@
 #include <mutex>
 #include <vector>
 #include <map>
+#include <algorithm>
 #include "defs.h"
 #include "module.h"
 
@@ -171,6 +172,8 @@ namespace rtd {
             if (!TopicCount || !parrayOut) return E_POINTER;
 
             std::vector<long> dirtyTopics;
+            std::vector<VARIANT> topicValues;
+
             {
                 std::lock_guard<std::mutex> lock(m_topicMutex);
                 if (m_dirtyTopics.empty()) {
@@ -179,45 +182,45 @@ namespace rtd {
                     return S_OK;
                 }
                 dirtyTopics.swap(m_dirtyTopics);
+
+                topicValues.reserve(dirtyTopics.size());
+                for (long topicId : dirtyTopics) {
+                    VARIANT value;
+                    VariantInit(&value);
+                    auto it = m_topicData.find(topicId);
+                    if (it != m_topicData.end()) {
+                        VariantCopy(&value, &it->second);
+                    } else {
+                        value.vt = VT_ERROR;
+                        value.scode = 2043; // xlErrGettingData
+                    }
+                    topicValues.push_back(value);
+                }
             }
 
             long count = static_cast<long>(dirtyTopics.size());
             SAFEARRAY* psa = nullptr;
             HRESULT hr = CreateRefreshDataArray(count, &psa);
-            if (FAILED(hr)) return hr;
+            if (FAILED(hr)) {
+                for(auto& v : topicValues) VariantClear(&v);
+                return hr;
+            }
 
             for (long i = 0; i < count; ++i) {
-                long topicId = dirtyTopics[i];
-                VARIANT value;
-                {
-                    std::lock_guard<std::mutex> lock(m_topicMutex);
-                    auto it = m_topicData.find(topicId);
-                    if (it != m_topicData.end()) {
-                         VariantCopy(&value, &it->second);
-                    } else {
-                        // Topic was disconnected while we were preparing the data
-                        VariantInit(&value);
-                        value.vt = VT_ERROR;
-                        value.scode = 2043; // xlErrGettingData
-                    }
-                }
-
                 long indices[2];
-                // Column (Topic Index)
                 indices[0] = i;
 
-                // Row 0: Topic ID
                 indices[1] = 0;
                 VARIANT vTopicId;
                 vTopicId.vt = VT_I4;
-                vTopicId.lVal = topicId;
+                vTopicId.lVal = dirtyTopics[i];
                 SafeArrayPutElement(psa, indices, &vTopicId);
 
-                // Row 1: Value
                 indices[1] = 1;
-                SafeArrayPutElement(psa, indices, &value);
-                VariantClear(&value);
+                SafeArrayPutElement(psa, indices, &topicValues[i]);
             }
+
+            for(auto& v : topicValues) VariantClear(&v);
 
             *TopicCount = count;
             *parrayOut = psa;
@@ -252,8 +255,10 @@ namespace rtd {
             }
              VariantCopy(&it->second, const_cast<VARIANT*>(&value));
 
-            // Mark as dirty
-            m_dirtyTopics.push_back(topicId);
+            // Mark as dirty (if not already)
+            if (std::find(m_dirtyTopics.begin(), m_dirtyTopics.end(), topicId) == m_dirtyTopics.end()) {
+                m_dirtyTopics.push_back(topicId);
+            }
             return S_OK;
         }
 
