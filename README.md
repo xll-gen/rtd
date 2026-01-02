@@ -66,6 +66,7 @@ The unit tests verify the internal logic of the C++ class without needing Excel.
 # On Linux (with Wine):
 wine unit_test.exe
 ```
+**Note:** The unit tests are configured to run in a Linux environment using Wine. Some Windows-specific behaviors, such as the dimension ordering of `SAFEARRAY` bounds, may differ from native Windows. The tests are adjusted to account for this.
 
 ### 2. Integration Tests (C++)
 This test attempts to load the COM server via `CoCreateInstance`. This verifies that:
