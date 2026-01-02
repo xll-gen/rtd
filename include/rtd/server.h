@@ -118,25 +118,25 @@ namespace rtd {
             }
 
             SAFEARRAYBOUND bounds[2];
-            // To achieve [2][TopicCount] (Rows=2, Cols=TopicCount):
-            // On this platform/compiler, bounds[0] maps to the Left-Most dimension (Dimension 1).
-            // bounds[1] maps to the Right-Most dimension (Dimension 2).
-            
-            // Dimension 1: Rows (0=TopicID, 1=Value) - Left-most
-            bounds[0].cElements = 2;
+            // To achieve a 2D array of [2][topicCount] (2 Rows, N Columns):
+            // The first element in the bounds array (bounds[0]) defines the right-most dimension (Columns).
+            // The last element (bounds[1]) defines the left-most dimension (Rows).
+
+            // Dimension 1 (Right-most): Columns (Number of topics)
+            bounds[0].cElements = topicCount;
             bounds[0].lLbound = 0;
-            
-            // Dimension 2: Columns (Topics) - Right-most
-            bounds[1].cElements = topicCount;
+
+            // Dimension 2 (Left-most): Rows (0=TopicID, 1=Value)
+            bounds[1].cElements = 2;
             bounds[1].lLbound = 0;
 
             // Note on SafeArrayPutElement indices:
-            // indices[0] typically corresponds to the Right-Most dimension (bounds[1] here).
-            // indices[1] typically corresponds to the Left-Most dimension (bounds[0] here).
+            // indices[0] corresponds to the first dimension in 'bounds' (the right-most one, i.e., the column index).
+            // indices[1] corresponds to the second dimension (the left-most one, i.e., the row index).
             // So:
-            // indices[0] = topicIndex (Col)
-            // indices[1] = 0 (TopicID) or 1 (Value) (Row)
-            // This matches the user/Excel requirement.
+            // indices[0] = topicIndex (Column)
+            // indices[1] = 0 (for TopicID row) or 1 (for Value row)
+            // This is the standard and expected mapping.
 
             *ppArray = SafeArrayCreate(VT_VARIANT, 2, bounds);
             if (!*ppArray) return E_OUTOFMEMORY;

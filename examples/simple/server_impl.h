@@ -106,14 +106,14 @@ public:
         for (long i = 0; i < *TopicCount; ++i) {
             long topicID = m_readyTopics[i];
 
-            // Row 0: TopicID. indices[0]=Row(0), indices[1]=Col(i)
-            indices[0] = 0; indices[1] = i;
+            // Column i, Row 0: TopicID
+            indices[0] = i; indices[1] = 0;
             VARIANT vID; VariantInit(&vID);
             vID.vt = VT_I4; vID.lVal = topicID;
             SafeArrayPutElement(*parrayOut, indices, &vID);
 
-            // Row 1: Value. indices[0]=Row(1), indices[1]=Col(i)
-            indices[0] = 1; indices[1] = i;
+            // Column i, Row 1: Value
+            indices[0] = i; indices[1] = 1;
             VARIANT vVal; VariantInit(&vVal);
             vVal.vt = VT_BSTR;
             vVal.bstrVal = SysAllocString(L"Hello World!");
