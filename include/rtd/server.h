@@ -2,6 +2,8 @@
 #define RTD_SERVER_H
 
 #include <mutex>
+#include <vector>
+#include <map>
 #include "defs.h"
 #include "module.h"
 
@@ -9,7 +11,7 @@ namespace rtd {
 
     /**
      * @brief Base class for implementing an RTD Server.
-     * Handles IUnknown and IDispatch (Stub) details.
+     * Handles IUnknown, IDispatch (Stub), topic management, and batch update logic.
      */
     class RtdServerBase : public IRtdServer {
     private:
@@ -17,15 +19,27 @@ namespace rtd {
 
     protected:
         IRTDUpdateEvent* m_callback;
-        std::mutex m_mutex;
+        std::mutex m_callbackMutex; // Protects m_callback
+
+        // Topic Management
+        std::map<long, VARIANT> m_topicData;
+        std::vector<long> m_dirtyTopics;
+        std::mutex m_topicMutex; // Protects m_topicData and m_dirtyTopics
+
 
     public:
         RtdServerBase() : m_refCount(1), m_callback(nullptr) {
             GlobalModule::Lock();
         }
         virtual ~RtdServerBase() {
-            // No need to lock m_mutex; object is being destroyed (RefCount=0)
+            // No need to lock mutexes; object is being destroyed (RefCount=0)
             if (m_callback) m_callback->Release();
+
+            // Clean up stored VARIANTs
+            for (auto const& [topicId, value] : m_topicData) {
+                VariantClear((VARIANT*)&value);
+            }
+            m_topicData.clear();
             GlobalModule::Unlock();
         }
 
@@ -67,7 +81,7 @@ namespace rtd {
         // --- IRtdServer Default Implementations ---
         HRESULT __stdcall ServerStart(IRTDUpdateEvent* Callback, long* pfRes) override {
             if (!pfRes) return E_POINTER;
-            std::lock_guard<std::mutex> lock(m_mutex);
+            std::lock_guard<std::mutex> lock(m_callbackMutex);
             if (m_callback) m_callback->Release();
             m_callback = Callback;
             if (m_callback) m_callback->AddRef();
@@ -76,7 +90,7 @@ namespace rtd {
         }
 
         HRESULT __stdcall ServerTerminate() override {
-            std::lock_guard<std::mutex> lock(m_mutex);
+            std::lock_guard<std::mutex> lock(m_callbackMutex);
             if (m_callback) {
                 m_callback->Release();
                 m_callback = nullptr;
@@ -90,7 +104,7 @@ namespace rtd {
         void NotifyUpdate() {
             IRTDUpdateEvent* tempCallback = nullptr;
             {
-                std::lock_guard<std::mutex> lock(m_mutex);
+                std::lock_guard<std::mutex> lock(m_callbackMutex);
                 if (m_callback) {
                     tempCallback = m_callback;
                     tempCallback->AddRef();
@@ -143,16 +157,108 @@ namespace rtd {
             return S_OK;
         }
 
-        HRESULT __stdcall DisconnectData(long TopicID) override { return S_OK; }
+        HRESULT __stdcall DisconnectData(long TopicID) override {
+            std::lock_guard<std::mutex> lock(m_topicMutex);
+            auto it = m_topicData.find(TopicID);
+            if (it != m_topicData.end()) {
+                VariantClear(&(it->second));
+                m_topicData.erase(it);
+            }
+            return S_OK;
+        }
+
+        HRESULT __stdcall RefreshData(long* TopicCount, SAFEARRAY** parrayOut) override {
+            if (!TopicCount || !parrayOut) return E_POINTER;
+
+            std::vector<long> dirtyTopics;
+            {
+                std::lock_guard<std::mutex> lock(m_topicMutex);
+                if (m_dirtyTopics.empty()) {
+                    *TopicCount = 0;
+                    *parrayOut = nullptr;
+                    return S_OK;
+                }
+                dirtyTopics.swap(m_dirtyTopics);
+            }
+
+            long count = static_cast<long>(dirtyTopics.size());
+            SAFEARRAY* psa = nullptr;
+            HRESULT hr = CreateRefreshDataArray(count, &psa);
+            if (FAILED(hr)) return hr;
+
+            for (long i = 0; i < count; ++i) {
+                long topicId = dirtyTopics[i];
+                VARIANT value;
+                {
+                    std::lock_guard<std::mutex> lock(m_topicMutex);
+                    auto it = m_topicData.find(topicId);
+                    if (it != m_topicData.end()) {
+                         VariantCopy(&value, &it->second);
+                    } else {
+                        // Topic was disconnected while we were preparing the data
+                        VariantInit(&value);
+                        value.vt = VT_ERROR;
+                        value.scode = 2043; // xlErrGettingData
+                    }
+                }
+
+                long indices[2];
+                // Column (Topic Index)
+                indices[0] = i;
+
+                // Row 0: Topic ID
+                indices[1] = 0;
+                VARIANT vTopicId;
+                vTopicId.vt = VT_I4;
+                vTopicId.lVal = topicId;
+                SafeArrayPutElement(psa, indices, &vTopicId);
+
+                // Row 1: Value
+                indices[1] = 1;
+                SafeArrayPutElement(psa, indices, &value);
+                VariantClear(&value);
+            }
+
+            *TopicCount = count;
+            *parrayOut = psa;
+            return S_OK;
+        }
+
         HRESULT __stdcall Heartbeat(long* pfRes) override {
             if (!pfRes) return E_POINTER;
             *pfRes = 1;
             return S_OK;
         }
 
+    public: // --- Topic Management ---
+
+        /**
+         * @brief Updates the value for a given topic and marks it for refresh.
+         * @param topicId The ID of the topic to update.
+         * @param value The new value for the topic.
+         * @return HRESULT S_OK on success.
+         */
+        HRESULT UpdateTopic(long topicId, const VARIANT& value) {
+            std::lock_guard<std::mutex> lock(m_topicMutex);
+
+            // Store the new value
+            auto it = m_topicData.find(topicId);
+            if (it == m_topicData.end()) {
+                // This can happen if Update is called before ConnectData completes.
+                // For simplicity, we'll allow it.
+                m_topicData[topicId];
+                it = m_topicData.find(topicId);
+                VariantInit(&it->second);
+            }
+             VariantCopy(&it->second, const_cast<VARIANT*>(&value));
+
+            // Mark as dirty
+            m_dirtyTopics.push_back(topicId);
+            return S_OK;
+        }
+
         // User must implement:
         // ConnectData
-        // RefreshData
         virtual HRESULT __stdcall ConnectData(long TopicID, SAFEARRAY** Strings, VARIANT_BOOL* GetNewValues, VARIANT* pvarOut) override = 0;
     };
 

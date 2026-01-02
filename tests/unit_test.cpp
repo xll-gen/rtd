@@ -162,6 +162,114 @@ int main() {
         SafeArrayDestroy(helperArray);
     }
 
+    // Test 5: RtdServerBase Batch Refresh Logic
+    std::cout << "Test 5: RtdServerBase Batch Refresh Logic..." << std::endl;
+    {
+        // A minimal server to directly test RtdServerBase logic
+        class TestServer : public rtd::RtdServerBase {
+        public:
+            HRESULT __stdcall ConnectData(long TopicID, SAFEARRAY** Strings, VARIANT_BOOL* GetNewValues, VARIANT* pvarOut) override {
+                if (!pvarOut) return E_POINTER;
+                // Store a dummy value for the topic
+                VARIANT initialValue;
+                VariantInit(&initialValue);
+                initialValue.vt = VT_I4;
+                initialValue.lVal = 0; // Initial value
+                UpdateTopic(TopicID, initialValue);
+                VariantClear(&initialValue);
+
+                // Return xlErrGettingData as per standard
+                pvarOut->vt = VT_ERROR;
+                pvarOut->scode = 2043;
+                return S_OK;
+            }
+        };
+
+        TestServer* server = new TestServer();
+        long topicCount = 0;
+        SAFEARRAY* sa = nullptr;
+
+        // 1. Initial state: no dirty topics
+        hr = server->RefreshData(&topicCount, &sa);
+        Assert(hr == S_OK, "RefreshData should succeed with no dirty topics");
+        Assert(topicCount == 0, "Topic count should be 0 initially");
+        Assert(sa == nullptr, "SAFEARRAY should be null initially");
+
+        // 2. Connect and update some topics
+        VARIANT_BOOL dummyBool;
+        VARIANT dummyVar;
+        VariantInit(&dummyVar);
+        server->ConnectData(101, nullptr, &dummyBool, &dummyVar);
+        server->ConnectData(102, nullptr, &dummyBool, &dummyVar);
+
+        VARIANT v1, v2;
+        VariantInit(&v1);
+        v1.vt = VT_BSTR;
+        v1.bstrVal = SysAllocString(L"Value1");
+        server->UpdateTopic(101, v1);
+        SysFreeString(v1.bstrVal);
+
+        VariantInit(&v2);
+        v2.vt = VT_R8;
+        v2.dblVal = 123.45;
+        server->UpdateTopic(102, v2);
+
+        // 3. Call RefreshData and validate the output
+        hr = server->RefreshData(&topicCount, &sa);
+        Assert(hr == S_OK, "RefreshData should succeed with dirty topics");
+        Assert(topicCount == 2, "Topic count should be 2");
+        Assert(sa != nullptr, "SAFEARRAY should not be null");
+
+        if (sa) {
+            long lBound1, uBound1, lBound2, uBound2;
+            SafeArrayGetLBound(sa, 1, &lBound1); // Left-most (Rows)
+            SafeArrayGetUBound(sa, 1, &uBound1);
+            SafeArrayGetLBound(sa, 2, &lBound2); // Right-most (Cols)
+            SafeArrayGetUBound(sa, 2, &uBound2);
+
+            Assert(uBound1 - lBound1 + 1 == 2, "Array should have 2 rows");
+            Assert(uBound2 - lBound2 + 1 == 2, "Array should have 2 columns");
+
+            long indices[2];
+            VARIANT val;
+
+            // Check Topic 1 (ID: 101, Value: "Value1")
+            indices[0] = 0; // Column 0
+            indices[1] = 0; // Row 0 (Topic ID)
+            SafeArrayGetElement(sa, indices, &val);
+            Assert(val.vt == VT_I4 && val.lVal == 101, "Topic ID at [0,0] should be 101");
+
+            indices[1] = 1; // Row 1 (Value)
+            SafeArrayGetElement(sa, indices, &val);
+            Assert(val.vt == VT_BSTR && wcscmp(val.bstrVal, L"Value1") == 0, "Value at [0,1] should be 'Value1'");
+            VariantClear(&val);
+
+
+            // Check Topic 2 (ID: 102, Value: 123.45)
+            indices[0] = 1; // Column 1
+            indices[1] = 0; // Row 0 (Topic ID)
+            SafeArrayGetElement(sa, indices, &val);
+            Assert(val.vt == VT_I4 && val.lVal == 102, "Topic ID at [1,0] should be 102");
+
+            indices[1] = 1; // Row 1 (Value)
+            SafeArrayGetElement(sa, indices, &val);
+            Assert(val.vt == VT_R8 && val.dblVal == 123.45, "Value at [1,1] should be 123.45");
+
+            SafeArrayDestroy(sa);
+            sa = nullptr;
+        }
+
+        // 4. Call RefreshData again, should be no new updates
+        hr = server->RefreshData(&topicCount, &sa);
+        Assert(hr == S_OK, "Second RefreshData call should succeed");
+        Assert(topicCount == 0, "Topic count should be 0 on second call");
+        Assert(sa == nullptr, "SAFEARRAY should be null on second call");
+
+
+        server->Release();
+    }
+
+
     std::cout << "All Unit Tests Passed." << std::endl;
     return 0;
 }
